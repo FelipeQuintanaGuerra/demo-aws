@@ -1,7 +1,7 @@
 import json
 
 # Para la demo: cambiar VERSION y hacer git push dispara todo el pipeline.
-VERSION = "2"
+VERSION = "1"
 
 # Para la demo de rollback: poner en True y hacer push.
 # Simula un bug que los tests NO detectan (solo falla con un "context" real de
