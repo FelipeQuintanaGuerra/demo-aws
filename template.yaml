@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Demo de despliegue automatico - API en Lambda con despliegue canario
+
+# Esta plantilla define la APLICACION. Es la que despliega la etapa Deploy
+# del pipeline (diapositivas 9 y 12).
+
+Resources:
+  HelloFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: app/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      MemorySize: 128
+      Timeout: 5
+      # Cada despliegue publica una version nueva e inmutable y mueve el alias "live".
+      AutoPublishAlias: live
+      DeploymentPreference:
+        # 10% del trafico a la version nueva, espera 5 minutos y pasa al 100%.
+        Type: Canary10Percent5Minutes
+        # Si esta alarma salta durante el corte, CodeDeploy revierte solo.
+        Alarms:
+          - !Ref CanaryErrorsAlarm
+      Events:
+        Hello:
+          Type: Api
+          Properties:
+            Path: /
+            Method: get
+
+  # Mira solo los errores de la version nueva (ExecutedVersion).
+  CanaryErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Errores en la version canario de la funcion
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: Resource
+          Value: !Sub '${HelloFunction}:live'
+        - Name: FunctionName
+          Value: !Ref HelloFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt HelloFunction.Version.Version
+
+Outputs:
+  ApiUrl:
+    Description: URL de la API (abrirla en el navegador durante la demo)
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/'

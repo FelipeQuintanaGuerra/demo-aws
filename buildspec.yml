@@ -1,0 +1,28 @@
+version: 0.2
+
+# Etapa Build del pipeline (diapositiva 7).
+# Variable de entorno ARTIFACT_BUCKET: la define pipeline.yaml en el proyecto CodeBuild.
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.12
+
+  pre_build:
+    commands:
+      - echo "Corriendo tests unitarios..."
+      - python -m unittest discover -s tests -v
+
+  build:
+    commands:
+      - echo "Empaquetando la aplicacion y subiendo el codigo a S3..."
+      - >
+        aws cloudformation package
+        --template-file template.yaml
+        --s3-bucket "$ARTIFACT_BUCKET"
+        --s3-prefix lambda
+        --output-template-file packaged.yaml
+
+artifacts:
+  files:
+    - packaged.yaml
