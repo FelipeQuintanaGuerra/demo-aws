@@ -6,7 +6,7 @@ VERSION = "2"
 # Para la demo de rollback: poner en True y hacer push.
 # Simula un bug que los tests NO detectan (solo falla con un "context" real de
 # Lambda), asi que llega al canario y la alarma de CloudWatch lo revierte.
-FALLAR = False
+FALLAR = True
 
 
 def lambda_handler(event, context):
